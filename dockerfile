@@ -1,10 +1,11 @@
-# Usar una imagen base de JDK de Amazon Corretto
-FROM amazoncorretto:17-alpine-jdk
-# Establecer el directorio de trabajo
+FROM maven:3.9.0-eclipse-temurin-19 AS build
 WORKDIR /app
-# Copiar el archivo JAR generado en el contenedor
-COPY target/*.jar app.jar
-# Exponer el puerto en el que la aplicación se ejecutará
-EXPOSE 8081
-# Comando para ejecutar la aplicación
-ENTRYPOINT ["java","-jar", "app.jar"]
+COPY pom.xml .
+COPY src ./src
+RUN mvn clean package -DskipTests
+# Etapa final: solo el runtime
+FROM openjdk:19-jdk
+WORKDIR /app
+COPY --from=build /app/target/*.jar app.jar
+EXPOSE 8080
+ENTRYPOINT ["java","-jar","app.jar"]
